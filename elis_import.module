@@ -1,0 +1,23 @@
+<?php 
+
+/** 
+ * ELiS import module for importing from remote resources
+ 
+ * @author Arsen I. Borovinskiy 
+ */
+
+/**
+ * hook_menu implementation
+ */
+function elis_import_menu() {
+  $items['node/%node/import/culturaru'] = array(
+    'title' => "Импорт с сайта Cultura.RU",
+    'page callback' => 'import_cultura_epub',
+    'page arguments' => array(1),    
+    'access arguments' => array('import any documents'),
+    'weight' => 5,
+    'type' => MENU_CALLBACK,  //  MENU_LOCAL_TASK,        
+    'file'=> 'culturaru.inc',
+  );
+  return $items;  
+}

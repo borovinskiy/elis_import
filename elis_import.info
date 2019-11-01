@@ -1,0 +1,9 @@
+name = ELiS import
+description = ELiS import
+version = "7.x-0.7"
+core = "7.x"
+package = elis
+dependencies[] = elis
+dependencies[] = subj_library
+
+files[] = elis_import.module
