@@ -5,7 +5,7 @@
 
 
 function import_culturaru_files() {
-  require_once(drupal_get_path("module","elis_epub") . "/import/import.php");
+  require_once(drupal_get_path("module","elis_import") . "/epub/import/import.php");
 }
 
 
@@ -17,16 +17,11 @@ function import_cultura_epub($node) {
   
   module_load_all();  
 
-  
+  ElisInstallHelper::addAllowedValueToField('node', 'epub', 'field_import_service', 'culture.ru', 'Культура.РФ');
   
   $out = '';
   
   if ($node->type == "subj") {  
-    
-    // uncomment for visible form
-    // for cultura.ru it can not work
-    //$form = drupal_get_form("culturaru_batch_form",$node);
-    //$out = drupal_render($form);
     
     $out .= "<h2>Импорт документов с портала culture.ru</h2>";
     $out .= "<p>Портал culture.ru содержит раздел с художественной литературой в формате EPUB.</p>";
@@ -153,10 +148,7 @@ function culturaru_change_data($epubVO, $parent_nid, $catalog_nid, &$context) {
   }
   
   $context['results']['url'] = $url;
-  //$context['results']['resFile'] = $resFile;
   $context['results']['catalog_nid'] = $catalog_nid;
-  // Эта информация будет доступна в mymodule_batch_finished  
-  // Сообщение выводимое под прогресс-баром после окончания текущей операции
   
 }
 

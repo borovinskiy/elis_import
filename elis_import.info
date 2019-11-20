@@ -1,9 +1,14 @@
 name = ELiS import
 description = ELiS import
-version = "7.x-0.7"
+version = "7.x-2.0"
 core = "7.x"
 package = elis
 dependencies[] = elis
 dependencies[] = subj_library
 
 files[] = elis_import.module
+files[] = import/epub/CulturaRuResExtractor.php
+files[] = import/epub/EpubVO.php
+files[] = import/epub/HtmlResExtractor.php
+files[] = import/epub/ResExtractor.php
+files[] = import/epub/import.php

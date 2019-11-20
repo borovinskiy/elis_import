@@ -5,16 +5,13 @@
  */
 
 function import_temocenter_files() {
-  // require_once(drupal_get_path("module","elis") . "/import/ElisImportHelper.class.php");
-  require_once(drupal_get_path("module","elis_epub") . "/import/import.php");
+  require_once(drupal_get_path("module","elis_import") . "/epub/import/import.php");
 }
 
 /**
  * Create navigation before run import
  */
 function create_temocenter_navigation() {
-  // taxonomy_get_vocabularies()
-  // taxonomy_get_term_by_name('')
   $vocabulary = taxonomy_vocabulary_machine_name_load('doctype');
   if ($vocabulary) {
     $rootTerm = ElisImportHelper::insertTermsToVocabulariIfNotExists(array('Учебный ресурс'),$vocabulary)[0];

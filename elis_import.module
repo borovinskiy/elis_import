@@ -17,7 +17,7 @@ function elis_import_menu() {
     'access arguments' => array('import any documents'),
     'weight' => 5,
     'type' => MENU_CALLBACK,  //  MENU_LOCAL_TASK,        
-    'file'=> 'culturaru.inc',
+    'file'=> 'sources/culturaru.inc',
   );
   return $items;  
 }
