@@ -87,7 +87,12 @@ class CulturaRuResExtractor extends HtmlResExtractor {
      
     $epubVO->title = trim($xpath->query('//article[@class="article"]//h1')->item(0)->textContent);
     
-    $epubVO->authorName = trim($xpath->query('//div[@class="about-entity_column-primary"]//div[@class="attributes attributes__horizontal attributes__small-spacing"]/div/div[2]')->item(0)->textContent);
+    $author_link = $xpath->query('//div[@class="about-entity_column-primary"]//div[@class="attributes attributes__horizontal attributes__small-spacing"]/div//a[contains(@href, \'persons\')]');
+    if ($author_link->length) {
+      $epubVO->authorName = trim($author_link->item(0)->textContent);
+    } else {
+      $epubVO->authorName = trim($xpath->query('//div[@class="about-entity_column-primary"]//div[@class="attributes attributes__horizontal attributes__small-spacing"]/div/div[2]')->item(0)->textContent);
+    }
     
     $epubVO->fileUrl = trim($xpath->query('//div[@class="about-entity_column-primary"]//a[contains(@href,".epub")]')->item(0)->getAttribute("href")); // full epub path    
      
@@ -123,13 +128,16 @@ class CulturaRuResExtractor extends HtmlResExtractor {
         "https://www.culture.ru/literature/books/novelette"
       ),
       "Очерк" => array(
-        "https://www.culture.ru/literature/books/essay"
+        "https://www.culture.ru/literature/books/essay?page=1&limit=24",
+        "https://www.culture.ru/literature/books/essay?page=2&limit=24"
       ),
       "Повесть" => array(
         "https://www.culture.ru/literature/books/tale?page=1&limit=24",
         "https://www.culture.ru/literature/books/tale?page=2&limit=24",
-        "https://www.culture.ru/literature/books/tale?page=3&limit=24"
+        "https://www.culture.ru/literature/books/tale?page=3&limit=24",
+        "https://www.culture.ru/literature/books/tale?page=4&limit=24"
       ),
+      /* exculded from culture.ru
       "Проза" => array(
         "https://www.culture.ru/literature/books/prose?limit=24&page=1",
         "https://www.culture.ru/literature/books/prose?limit=24&page=2",
@@ -146,6 +154,7 @@ class CulturaRuResExtractor extends HtmlResExtractor {
         "https://www.culture.ru/literature/books/prose?limit=24&page=13",
         "https://www.culture.ru/literature/books/prose?limit=24&page=14"        
       ),
+      */
       "Пьеса" => array(
         "https://www.culture.ru/literature/books/play?page=1&limit=24",
         "https://www.culture.ru/literature/books/play?page=2&limit=24"
@@ -158,9 +167,10 @@ class CulturaRuResExtractor extends HtmlResExtractor {
       ),
       "Поэма" => array(
         "https://www.culture.ru/literature/books/poem?page=1&limit=24",
-        "https://www.culture.ru/literature/books/poem?page=2&limit=24"
+        "https://www.culture.ru/literature/books/poem?page=2&limit=24",
+        "https://www.culture.ru/literature/books/poem?page=3&limit=24"
       ),
-      "Рассказ" => array(
+      "Рассказы" => array(
         "https://www.culture.ru/literature/books/story?limit=24&page=1",
         "https://www.culture.ru/literature/books/story?limit=24&page=2",
         "https://www.culture.ru/literature/books/story?limit=24&page=3",
@@ -170,24 +180,28 @@ class CulturaRuResExtractor extends HtmlResExtractor {
         "https://www.culture.ru/literature/books/story?limit=24&page=7",
         "https://www.culture.ru/literature/books/story?limit=24&page=8",
         "https://www.culture.ru/literature/books/story?limit=24&page=9",
-        "https://www.culture.ru/literature/books/story?limit=24&page=10"
+        "https://www.culture.ru/literature/books/story?limit=24&page=10",
+        "https://www.culture.ru/literature/books/story?limit=24&page=11",
+        "https://www.culture.ru/literature/books/story?limit=24&page=12",
+        "https://www.culture.ru/literature/books/story?limit=24&page=13"
       ),
-      "Роман" => array(
+      "Романы" => array(
         "https://www.culture.ru/literature/books/novel?page=1&limit=24",
         "https://www.culture.ru/literature/books/novel?page=2&limit=24",
         "https://www.culture.ru/literature/books/novel?page=3&limit=24"
       ),
-      "Сказа" => array(
+      "Сказки" => array(
         "https://www.culture.ru/literature/books/tales?page=1&limit=24",
         "https://www.culture.ru/literature/books/tales?page=2&limit=24"
       ),
       "Статья" => array(
         "https://www.culture.ru/literature/books/article"
       ),
+      /*
       "Эпопея" => array(
         "https://www.culture.ru/literature/books/epopee"
       )
-      
+      */
     );
   }
 }
