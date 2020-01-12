@@ -1,6 +1,6 @@
 name = ELiS import
 description = ELiS import
-version = "7.x-2.0"
+version = "7.x-2.01"
 core = "7.x"
 package = elis
 dependencies[] = elis

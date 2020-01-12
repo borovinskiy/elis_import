@@ -205,13 +205,13 @@ class TemocenterExtractor {
             
             switch ($doctype) {
               case "Практикум":
-                $doctype = "практикум";
+                $doctype = "Практикум";
                 break;
               case "Информационный ресурс":
-                $doctype = "учебный информационный ресурс";
+                $doctype = "Учебный информационный ресурс";
                 break;
               case "Контроль":
-                $doctype = "контроль знаний";
+                $doctype = "Контроль знаний";
                 break;
             }
             
