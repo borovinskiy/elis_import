@@ -12,12 +12,17 @@ function import_temocenter_files() {
  * Create navigation before run import
  */
 function create_temocenter_navigation() {
-  $vocabulary = taxonomy_vocabulary_machine_name_load('doctype');
+  $vocabulary = taxonomy_vocabulary_machine_name_load('classification');
   if ($vocabulary) {
+    /*
     $rootTerm = ElisImportHelper::insertTermsToVocabulariIfNotExists(array('Учебный ресурс'),$vocabulary)[0];
     ElisImportHelper::insertTermsChainToVocabulary(array('Информационный ресурс'), $vocabulary, $rootTerm);
     ElisImportHelper::insertTermsChainToVocabulary(array('Практикум'), $vocabulary, $rootTerm);
-    ElisImportHelper::insertTermsChainToVocabulary(array('Контроль'), $vocabulary, $rootTerm);
+    ElisImportHelper::insertTermsChainToVocabulary(array('Контроль'), $vocabulary, $rootTerm); */
+    $term_learning_resource = end(ElisImportHelper::insertTermsChainToVocabulary(array('учебный ресурс'), $vocabulary, $term_resource, 'resource/learning'));
+    ElisImportHelper::insertTermsChainToVocabulary(array('учебный информационный ресурс'), $vocabulary, $term_learning_resource, 'resource/learning/info');
+    ElisImportHelper::insertTermsChainToVocabulary(array('практикум'), $vocabulary, $term_learning_resource, 'resource/learning/practicum');
+    ElisImportHelper::insertTermsChainToVocabulary(array('контроль знаний'), $vocabulary, $term_learning_resource, 'resource/learning/control/knowledge');
   }
   
 }
@@ -198,7 +203,17 @@ class TemocenterExtractor {
             
             $doctype = trim($resourceXPath->query('//div[@class="kris-fortype"]/img')->item(0)->getAttribute('data-hintinfo')); // "Практикум", "Информационный ресурс", "Контроль"
             
-            
+            switch ($doctype) {
+              case "Практикум":
+                $doctype = "практикум";
+                break;
+              case "Информационный ресурс":
+                $doctype = "учебный информационный ресурс";
+                break;
+              case "Контроль":
+                $doctype = "контроль знаний";
+                break;
+            }
             
           }
           
@@ -210,7 +225,7 @@ class TemocenterExtractor {
           ElisImportHelper::attachTextToNodeField($epub_node, 'field_import_service', self::SERVICE_NAME);
           
           if ($epub_node && $doctype) {
-            ElisImportHelper::attachTermToNodeField($epub_node, 'field_doctype', $doctype, taxonomy_vocabulary_machine_name_load('doctype'));
+            ElisImportHelper::attachClassificationTermsToNodeIfExists($epub_node, $doctype);
           }
           
           ElisImportHelper::attachBooleanToNodeField($epub_node, 'field_allow_unprotected_download', '0');  // we have a bug that resource download with zip extension
