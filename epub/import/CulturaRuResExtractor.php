@@ -98,7 +98,7 @@ class CulturaRuResExtractor extends HtmlResExtractor {
      
     $epubVO->importSource = $url;
     
-    $epubVO->licenseUrl = trim($xpath->query('//article[@class="article"]//a[@rel="license"]')->item(0)->getAttribute("href"));
+    $epubVO->licenseUrl = trim($xpath->query('//article[@class="article"]//a[@rel="license nofollow"]')->item(0)->getAttribute("href"));
     
     // extract description (it can have multiple paragraphs <p></p>)
     $descriptionContent = $xpath->query('//article[@class="article"]//div[@class="styled-content_body"]')->item(0);  // all description as text
