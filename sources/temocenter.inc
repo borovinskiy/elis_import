@@ -50,7 +50,7 @@ class TemocenterExtractor {
   public $rootCatalogNode = false;
   
   public $isImportOnlyBrowserResource = true;
-  public $isImportResourcesWithFlash = true;
+  public $isImportResourcesWithFlash = false;
   public $isImportResourcesWithOmsPlayer = false;
   
   public function importAll() {
