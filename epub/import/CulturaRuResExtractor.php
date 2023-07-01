@@ -85,7 +85,7 @@ class CulturaRuResExtractor extends HtmlResExtractor {
       }
     }           
      
-    $epubVO->title = trim($xpath->query('//article[@class="article"]//h1')->item(0)->textContent);
+    $epubVO->title = trim($xpath->query('//article[contains(@class,"article")]//h1')->item(0)->textContent);
     
     $author_link = $xpath->query('//div[@class="about-entity_column-primary"]//div[@class="attributes attributes__horizontal attributes__small-spacing"]/div//a[contains(@href, \'persons\')]');
     if ($author_link->length) {
@@ -94,15 +94,20 @@ class CulturaRuResExtractor extends HtmlResExtractor {
       $epubVO->authorName = trim($xpath->query('//div[@class="about-entity_column-primary"]//div[@class="attributes attributes__horizontal attributes__small-spacing"]/div/div[2]')->item(0)->textContent);
     }
     
-    $epubVO->fileUrl = trim($xpath->query('//div[@class="about-entity_column-primary"]//a[contains(@href,".epub")]')->item(0)->getAttribute("href")); // full epub path    
+    // full epub path   
+    $fileUrlItem = $xpath->query('//div[@class="about-entity_column-primary"]//a[contains(@href,".epub")]')->item(0);
+    if (!$fileUrlItem) {
+      $fileUrlItem = $xpath->query('//div[@class="about-entity_column-primary"]//a[contains(@href,"files")]')->item(0); // https://cdn.culture.ru/files/...
+    }
+    $epubVO->fileUrl = trim($fileUrlItem->getAttribute("href"));
      
     $epubVO->importSource = $url;
     
-    $epubVO->licenseUrl = trim($xpath->query('//article[@class="article"]//a[@rel="license nofollow"]')->item(0)->getAttribute("href"));
+    $epubVO->licenseUrl = trim($xpath->query('//article[@class="article"]//a[@rel="license nofollow noopener"]')->item(0)->getAttribute("href"));
     
     // extract description (it can have multiple paragraphs <p></p>)
-    $descriptionContent = $xpath->query('//article[@class="article"]//div[@class="styled-content_body"]')->item(0);  // all description as text
-    $descriptionContentP = $xpath->query('//article[@class="article"]//div[@class="styled-content_body"]/p'); // description by paragraphs
+    $descriptionContent = $xpath->query('//article[contains(@class,"article")]//div[@class="styled-content_body"]')->item(0);  // all description as text
+    $descriptionContentP = $xpath->query('//article[contains(@class,"article")]//div[@class="styled-content_body"]/p'); // description by paragraphs
     $epubVO->description = '';
     if ($descriptionContentP) {
       for ($i=0; $descriptionContentP->item($i); $i++) {
