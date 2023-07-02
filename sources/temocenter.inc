@@ -19,10 +19,11 @@ function create_temocenter_navigation() {
     ElisImportHelper::insertTermsChainToVocabulary(array('Информационный ресурс'), $vocabulary, $rootTerm);
     ElisImportHelper::insertTermsChainToVocabulary(array('Практикум'), $vocabulary, $rootTerm);
     ElisImportHelper::insertTermsChainToVocabulary(array('Контроль'), $vocabulary, $rootTerm); */
-    $term_learning_resource = end(ElisImportHelper::insertTermsChainToVocabulary(array('учебный ресурс'), $vocabulary, $term_resource, 'resource/learning'));
-    ElisImportHelper::insertTermsChainToVocabulary(array('учебный информационный ресурс'), $vocabulary, $term_learning_resource, 'resource/learning/info');
-    ElisImportHelper::insertTermsChainToVocabulary(array('практикум'), $vocabulary, $term_learning_resource, 'resource/learning/practicum');
-    ElisImportHelper::insertTermsChainToVocabulary(array('контроль знаний'), $vocabulary, $term_learning_resource, 'resource/learning/control/knowledge');
+    $_terms = ElisImportHelper::insertTermsChainToVocabulary(array('Учебный ресурс'), $vocabulary, $term_resource, 'resource/learning');
+    $term_learning_resource = end($_terms);
+    ElisImportHelper::insertTermsChainToVocabulary(array('Учебный информационный ресурс'), $vocabulary, $term_learning_resource, 'resource/learning/info');
+    ElisImportHelper::insertTermsChainToVocabulary(array('Практикум'), $vocabulary, $term_learning_resource, 'resource/learning/practicum');
+    ElisImportHelper::insertTermsChainToVocabulary(array('Контроль знаний'), $vocabulary, $term_learning_resource, 'resource/learning/control/knowledge');
   }
   
 }
@@ -52,24 +53,26 @@ class TemocenterExtractor {
   public $isImportOnlyBrowserResource = true;
   public $isImportResourcesWithFlash = false;
   public $isImportResourcesWithOmsPlayer = false;
+  public $isImportMaps = false;
   
   public function importAll() {
-    if (!module_exists('elis_epub')) die('For import from temocenter you need enabling eils_epub module.');
+    if (!module_exists('elis_web')) die('For import from temocenter you must enabled eils_web module.');
     
     do  {
       print "Run iteration step with offset " . $this->offset . "...";
-      $epubVOs = $this->findAndImportDocumentsStep();
-    } while (count($epubVOs));
+      $importVOs = $this->findAndImportDocumentsStep();
+    } while (count($importVOs));
   }
   
   private function findAndImportDocumentsStep() {
+    global $user;  
     $vocabulary_classification = taxonomy_vocabulary_machine_name_load('classification');
     $doc = new DOMDocument();
     usleep($this->requestTimeoutMs * 1000);
     $doc->loadHTML(mb_convert_encoding(file_get_contents($this->getUrlList()), 'HTML-ENTITIES', 'UTF-8'));
     $this->offset += $this->limit;
     $xpath = new DOMXPath($doc);
-    $epubVOs = array();
+    $importVOs = array();
     $elements = $xpath->query('//div[@class="kris-resulrmod-box"]');
     if (!is_null($elements)) {
       foreach ($elements as $box) {   // document iterator
@@ -79,9 +82,15 @@ class TemocenterExtractor {
         $isFlashRequired = false;
         $isBrowserRequired = false;
         $isOmsPlayerRequired = false;
+        $isResourceHaveMap = false;
         
         $fileUrl = $this->baseUrl . trim($xpath->query('.//div[@class="kris-resulrmod-info-txt download_link_tmp_place"]/a[@data-hintinfo="Скачать"]',$box)->item(0)->getAttribute("href"));
         
+        $title = trim($xpath->query('.//h2[@class="kris-resulrmod-info__h2"]/a',$box)->item(0)->textContent);
+        
+        if (preg_match("#карт#i", $title)) { // find map in title
+          $isResourceHaveMap = true;
+        }
         
         $modforbrowser = $xpath->query('.//div[@class="kris-modfor-browser"]/span/img',$box);
         if ($modforbrowser) {
@@ -100,31 +109,33 @@ class TemocenterExtractor {
           if ($this->isImportOnlyBrowserResource && !$isBrowserRequired) $isImportAllowed = false;
           if (!$this->isImportResourcesWithOmsPlayer && $isOmsPlayerRequired) $isImportAllowed = false;
           if (!$this->isImportResourcesWithFlash && $isFlashRequired) $isImportAllowed = false;
-          print "is import allowed: " . $isImportAllowed . " browser: " . $isBrowserRequired . " flash: " . $isFlashRequired . " oms: " . $isOmsPlayerRequired . "\n";
+          if (!$this->isImportMaps && $isResourceHaveMap) $isImportAllowed = false;
+          print "is import allowed: " . $isImportAllowed . " browser: " . $isBrowserRequired . " flash: " . $isFlashRequired . " oms: " . $isOmsPlayerRequired . " map: " . $isResourceHaveMap . "\n";
         }
         
         
         
         if ($isImportAllowed && preg_match("#\.zip$#",$fileUrl)) {  // import only resources for browser (with zip extension)
           
-          $parent_node = $this->rootCatalogNode; // parent node for this epubVO
+          $parent_node = $this->rootCatalogNode; // parent node for this importVO
           $doctype = false;
           $classification_term_names = array();
           
-          $epubVO = new EpubVO();
-          $epubVO->title = trim($xpath->query('.//h2[@class="kris-resulrmod-info__h2"]/a',$box)->item(0)->textContent);
-          $epubVO->description = trim($xpath->query('.//div[@class="kris-resulrmod-info-txt"]',$box)->item(0)->textContent);
-          $epubVO->coverUrl = $this->baseUrl . trim($xpath->query('.//div[@class="kris-resumod-img"]/a/img',$box)->item(0)->getAttribute("src"));
-          $epubVO->fileUrl = $fileUrl;
-          $epubVO->licenseUrl = 'http://store.temocenter.ru/about.html';
-          $epubVO->isInteractiveEpub = true;
+          $importVO = new stdClass();
+          
+          $importVO->title = trim($xpath->query('.//h2[@class="kris-resulrmod-info__h2"]/a',$box)->item(0)->textContent);
+          $importVO->description = trim($xpath->query('.//div[@class="kris-resulrmod-info-txt"]',$box)->item(0)->textContent);
+          $importVO->coverUrl = $this->baseUrl . trim($xpath->query('.//div[@class="kris-resumod-img"]/a/img',$box)->item(0)->getAttribute("src"));
+          $importVO->fileUrl = $fileUrl;
+          $importVO->licenseUrl = 'http://store.temocenter.ru/about.html';
+          //$importVO->isInteractiveEpub = true;
           $resourceUrl = trim($xpath->query('.//h2[@class="kris-resulrmod-info__h2"]/a',$box)->item(0)->getAttribute("href"));
           // get page from resource url like http://store.temocenter.ru/res.html?rid=6227
           if ($resourceUrl) {
-            $epubVO->importSource = $this->baseUrl . $resourceUrl;
+            $importVO->importSource = $this->baseUrl . $resourceUrl;
             $resourceDoc = new DOMDocument();
             usleep($this->requestTimeoutMs * 1000);
-            $resourceDoc->loadHTML(mb_convert_encoding(file_get_contents($epubVO->importSource), 'HTML-ENTITIES', 'UTF-8'));
+            $resourceDoc->loadHTML(mb_convert_encoding(file_get_contents($importVO->importSource), 'HTML-ENTITIES', 'UTF-8'));
             $resourceXPath = new DOMXPath($resourceDoc);
             
             
@@ -136,7 +147,7 @@ class TemocenterExtractor {
                 // find authors
                 if (preg_match("#\s*Автор учебных материалов:\s(.*)\s*$#",$text_str,$matches)) {
                   $authors_novalidated = explode(",",trim($matches[1]));
-                  $epubVO->authorName = array();
+                  $importVO->authorsName = array();
                   foreach ($authors_novalidated as $author) {
                     
                     $is_valid = true;
@@ -146,12 +157,12 @@ class TemocenterExtractor {
                     if (preg_match("#проф\.#i",$author)) $is_valid = false;
                     if (preg_match("#\s*(.+)\s(.+)\s(.+)\s(.+)\s*#i",$author)) $is_valid = false; // 3 or more spaces beetwen books "sdfs sdfs sdfsd sdfsd"
                     
-                    if ($is_valid) $epubVO->authorName[] = trim($author);
+                    if ($is_valid) $importVO->authorsName[] = trim($author);
                   }
                 }
                 // find publisher
                 if (preg_match("#Издатель:(.*)$#",$text_str,$matches)) {
-                  $epubVO->publisherName = trim($matches[1]); //explode(",",trim($matches[1]));
+                  $importVO->publisherName = trim($matches[1]); //explode(",",trim($matches[1]));
                 }
                 
                 if (preg_match("#\s*Ограничение доступности:\s(.*)\s*#",$text_str,$matches)) {
@@ -217,31 +228,88 @@ class TemocenterExtractor {
             
           }
           
-          $epub_node = importAsEpubIfNotExists($epubVO, $parent_node);
+          $exists_node = find_node_if_exists_elis_import($importVO);
+          
+          if ($exists_node !== false) {
+            print "node is exists";
+            continue;
+          }
+          
+          //$import_node = importAsEpubIfNotExists($importVO, $parent_node);
+          
+          $account = $user;
+  
+          $ext = "zip";    
+  
+          $import_node = new stdClass();
+          $import_node->title = $importVO->title;
+          $import_node->type = "web";
+          node_object_prepare($import_node);
+          $import_node->language = LANGUAGE_NONE;
+          $import_node->uid = $account->uid;
+          $import_node->status = 1;
+          $import_node->promote = 0;
+          $import_node->comment = 0;
+          
           
           if ($resourceUrl) {
-            ElisImportHelper::attachTextToNodeField($epub_node, 'field_import_source', $epubVO->importSource);
+            ElisImportHelper::attachTextToNodeField($import_node, 'field_import_source', $importVO->importSource);
           }
-          ElisImportHelper::attachTextToNodeField($epub_node, 'field_import_service', self::SERVICE_NAME);
+          // ElisImportHelper::attachTextToNodeField($import_node, 'field_import_service', self::SERVICE_NAME);
           
-          if ($epub_node && $doctype) {
-            ElisImportHelper::attachClassificationTermsToNodeIfExists($epub_node, $doctype);
+          if ($doctype) {
+            ElisImportHelper::attachClassificationTermsToNodeIfExists($import_node, $doctype);
           }
           
-          ElisImportHelper::attachBooleanToNodeField($epub_node, 'field_allow_unprotected_download', '0');  // we have a bug that resource download with zip extension
+          ElisImportHelper::attachBooleanToNodeField($import_node, 'field_allow_unprotected_download', '0');  // we have a bug that resource download with zip extension
+          
+          if (isset($importVO->authorsName) && count($importVO->authorsName)) {
+            ElisImportHelper::attachAuthorsToNode($node,$importVO->authorsName);
+          }
+          
+          ElisImportHelper::attachLicenseUrlToNode($node, $importVO->licenseUrl);
           
           if (count($classification_term_names)) {
-            ElisImportHelper::attachClassificationTermsToNodeIfExists($epub_node, $classification_term_names);
+            ElisImportHelper::attachClassificationTermsToNodeIfExists($import_node, $classification_term_names);
           }
           
-          node_save($epub_node);
+          $filename = md5($importVO->fileUrl) . "." . $ext;  
+  
+          drupal_mkdir('private://imported');  
+          $file = file_save_data(
+            file_get_contents($importVO->fileUrl),
+            'private://imported/' . $filename,
+            FILE_EXISTS_REPLACE  
+          );
+          $file->uid = $account->uid;
+          $realpath = drupal_realpath($file->uri);
+          drupal_mkdir("private://covers");
+          $coverFileBytes = file_get_contents($importVO->coverUrl);    
+          print "cover bytes: " . strlen($coverFileBytes) . "\n";
+          $coverUri = 'private://covers/' . $file->fid;
+          $coverFile = file_save_data(
+            $coverFileBytes,
+            $coverUri
+          );
+          ElisImportHelper::attachFileToNodeField($import_node, 'field_file', $file);
+          if ($coverFile != false) {
+            ElisImportHelper::attachCoverFile($import_node, $coverFile);
+          }
+          if ($parent_node) {
+            ElisImportHelper::attachParentCatalogToNode($import_node, $parent_node);
+          }
+          if ($importVO->publisherName) {
+            ElisImportHelper::attachPublisherToNode($import_node, array($importVO->publisherName));
+          }
+          
+          node_save($import_node);
           print "___________\n";
 
-          $epubVOs[] = $epubVO;
+          $importVOs[] = $importVO;
         }
       }
     }
-    return $epubVOs;
+    return $importVOs;
   }
   
   private function getUrlList() {
